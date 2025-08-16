@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Special Story for You</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --netflix-dark: #141414;
+            --netflix-red: #E50914;
+            --text-light: #ffffff;
+            --text-grey: #808080;
+            --btn-secondary-bg: #4f4f4f80;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--netflix-dark);
+            color: var(--text-light);
+            font-family: 'Kanit', sans-serif;
+            overflow: hidden; /* ป้องกันการ scroll ในตอนแรก */
+        }
+
+        /* --- Page Containers --- */
+        .page {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease-in-out;
+            padding: 20px;
+        }
+
+        .page.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* --- Landing Page --- */
+        #landingPage h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        #landingPage p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-bottom: 1rem;
+            color: var(--text-grey);
+        }
+        .btn {
+            background-color: var(--netflix-red);
+            color: var(--text-light);
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background-color: #f40612;
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-secondary {
+            background-color: var(--btn-secondary-bg);
+        }
+        .btn-secondary:hover {
+            background-color: #6a6a6a80;
+        }
+        .synopsis-container {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            max-width: 600px;
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+        #geminiSynopsisText {
+            font-size: 1rem;
+            color: #ddd;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+
+        /* --- Profile Page --- */
+        #profilePage h2 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        .profile-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .profile-card {
+            cursor: pointer;
+            text-align: center;
+        }
+        .profile-card img {
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
+            border: 4px solid transparent;
+            object-fit: cover;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .profile-card span {
+            display: block;
+            margin-top: 0.8rem;
+            color: var(--text-grey);
+            font-size: 1.3rem;
+            transition: color 0.3s ease;
+        }
+        .profile-card:hover img {
+            border-color: var(--text-light);
+            transform: scale(1.05);
+        }
+        .profile-card:hover span {
+            color: var(--text-light);
+        }
+
+        /* --- Video Page --- */
+        #videoPage {
+            background-color: #000;
+        }
+        #videoPlayer {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* --- Final Page --- */
+        #finalPage h1 {
+            font-size: 3.5rem;
+            max-width: 800px;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+        }
+        #finalPage .button-group {
+            margin-top: 2rem;
+        }
+        .gemini-wish {
+            font-size: 1.2rem;
+            color: #ddd;
+            max-width: 700px;
+            line-height: 1.7;
+            min-height: 50px;
+            margin-top: 1rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Audio Player for Sound Effect -->
+    <audio id="tudumSfx" preload="auto"></audio>
+
+    <!-- Page 1: Landing -->
+    <div id="landingPage" class="page active">
+        <h1 id="landingTitle"></h1>
+        <p id="landingDesc"></p>
+        <div id="geminiSynopsisContainer" class="synopsis-container">
+            <p id="geminiSynopsisText">กดปุ่ม 'สร้างเรื่องย่อพิเศษ' เพื่อดูคำทำนายปีนี้ของคุณ...</p>
+        </div>
+        <div class="button-group">
+            <button id="startBtn" class="btn">เริ่มการอวยพร</button>
+            <button id="generateSynopsisBtn" class="btn btn-secondary">✨ สร้างเรื่องย่อพิเศษ</button>
+        </div>
+    </div>
+
+    <!-- Page 2: Profile Selection -->
+    <div id="profilePage" class="page">
+        <h2>ใครกำลังรับชม?</h2>
+        <div id="profileGrid" class="profile-grid">
+            <!-- Profiles will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Page 3: Video Player -->
+    <div id="videoPage" class="page">
+        <video id="videoPlayer" playsinline preload="auto"></video>
+    </div>
+
+    <!-- Page 4: Final Message -->
+    <div id="finalPage" class="page">
+        <h1 id="finalMessage"></h1>
+        <p id="geminiWishText"></p>
+        <div class="button-group">
+            <button id="replayBtn" class="btn">ดูอีกครั้ง</button>
+            <button id="generateWishBtn" class="btn btn-secondary">✨ ขอพรวันเกิดจาก AI</button>
+        </div>
+    </div>
+
+
+<script>
+/* ================== 🎨 CUSTOMIZE HERE 🎨 ================== */
+const CONFIG = {
+    // --- ชื่อเจ้าของวันเกิด (สำคัญสำหรับ Gemini) ---
+    birthday_person_name: "ต้น",
+
+    // --- หน้าเริ่มต้น ---
+    landing_title: "สุขสันต์วันเกิดนะ",
+    landing_description: "มีเรื่องราวสุดพิเศษที่สร้างขึ้นมาเพื่อคุณโดยเฉพาะ... พร้อมที่จะรับชมหรือยัง?",
+
+    // --- หน้าเลือกโปรไฟล์ ---
+    profiles: [
+        { name: "เจ้าของวันเกิด", image: "assets/profile1.jpg" },
+        { name: "ความทรงจำ", image: "assets/profile2.jpg" },
+        { name: "คนสำคัญ", image: "assets/profile3.jpg" },
+        { name: "HBD", image: "assets/profile4.jpg" },
+    ],
+
+    // --- วิดีโอและเสียง ---
+    video_file: "assets/story_video.mp4",
+    tudum_sound_file: "assets/tudum.mp3",
+
+    // --- หน้าสุดท้าย ---
+    final_message: "มีความสุขในวันนี้ให้มากๆนะ",
+};
+/* ========================================================== */
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Get all page elements
+    const pages = {
+        landing: document.getElementById('landingPage'),
+        profile: document.getElementById('profilePage'),
+        video: document.getElementById('videoPage'),
+        final: document.getElementById('finalPage'),
+    };
+
+    // Get interactive elements
+    const startBtn = document.getElementById('startBtn');
+    const replayBtn = document.getElementById('replayBtn');
+    const profileGrid = document.getElementById('profileGrid');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const tudumSfx = document.getElementById('tudumSfx');
+
+    // Gemini Feature Elements
+    const generateSynopsisBtn = document.getElementById('generateSynopsisBtn');
+    const geminiSynopsisText = document.getElementById('geminiSynopsisText');
+    const generateWishBtn = document.getElementById('generateWishBtn');
+    const geminiWishText = document.getElementById('geminiWishText');
+
+    // --- Gemini API Call Function with Exponential Backoff ---
+    async function callGeminiWithExponentialBackoff(prompt, maxRetries = 3) {
+        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+        const payload = { contents: chatHistory };
+        const apiKey = ""; // API key is handled by the environment
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error("Invalid response structure from API");
+                }
+            } catch (error) {
+                if (i === maxRetries - 1) {
+                    console.error("API call failed after multiple retries:", error);
+                    return null; // Return null after the last retry fails
+                }
+                const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        return null;
+    }
+
+
+    // --- Setup Content from CONFIG ---
+    function setupContent() {
+        document.getElementById('landingTitle').textContent = CONFIG.landing_title;
+        document.getElementById('landingDesc').textContent = CONFIG.landing_description;
+        document.getElementById('finalMessage').textContent = CONFIG.final_message;
+        videoPlayer.src = CONFIG.video_file;
+        tudumSfx.src = CONFIG.tudum_sound_file;
+        
+        profileGrid.innerHTML = CONFIG.profiles.map(profile => `
+            <div class="profile-card" role="button" aria-label="เลือกโปรไฟล์ ${profile.name}">
+                <img src="${profile.image}" alt="${profile.name}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/E50914/FFFFFF?text=?';">
+                <span>${profile.name}</span>
+            </div>
+        `).join('');
+    }
+
+    // --- Page Navigation ---
+    function showPage(pageName) {
+        Object.values(pages).forEach(page => page.classList.remove('active'));
+        if (pages[pageName]) {
+            pages[pageName].classList.add('active');
+        }
+    }
+
+    // --- Event Listeners ---
+    startBtn.addEventListener('click', () => showPage('profile'));
+
+    profileGrid.addEventListener('click', (event) => {
+        if (event.target.closest('.profile-card')) {
+            tudumSfx.play().catch(e => {});
+            pages.profile.style.opacity = '0';
+            setTimeout(() => {
+                showPage('video');
+                videoPlayer.currentTime = 0;
+                videoPlayer.play().catch(e => {});
+            }, 1800);
+        }
+    });
+
+    videoPlayer.addEventListener('ended', () => showPage('final'));
+
+    replayBtn.addEventListener('click', () => {
+        showPage('profile');
+        setTimeout(() => { pages.profile.style.opacity = '1'; }, 50);
+    });
+
+    // --- Gemini Feature Event Listeners ---
+    generateSynopsisBtn.addEventListener('click', async () => {
+        generateSynopsisBtn.disabled = true;
+        geminiSynopsisText.textContent = "กำลังสร้างเรื่องย่อ... 🎬";
+        
+        const prompt = `เขียนเรื่องย่อภาพยนตร์สั้นๆ ที่สนุกและน่าตื่นเต้น เป็นภาษาไทย สำหรับวันเกิดของ "${CONFIG.birthday_person_name}" เรื่องย่อนี้ควรเกี่ยวกับปีที่กำลังจะมาถึงที่เต็มไปด้วยการผจญภัย ความสำเร็จ และความสุข`;
+        const result = await callGeminiWithExponentialBackoff(prompt);
+
+        if (result) {
+            geminiSynopsisText.textContent = result;
+        } else {
+            geminiSynopsisText.textContent = "ขออภัย, เกิดข้อผิดพลาดในการสร้างเรื่องย่อ ลองอีกครั้งในภายหลัง";
+        }
+        generateSynopsisBtn.disabled = false;
+    });
+
+    generateWishBtn.addEventListener('click', async () => {
+        generateWishBtn.disabled = true;
+        geminiWishText.textContent = "กำลังสร้างคำอวยพร... ✨";
+
+        const prompt = `เขียนคำอวยพรวันเกิดที่อบอุ่นและสร้างแรงบันดาลใจ เป็นภาษาไทย ให้กับ "${CONFIG.birthday_person_name}"`;
+        const result = await callGeminiWithExponentialBackoff(prompt);
+
+        if (result) {
+            geminiWishText.textContent = result;
+        } else {
+            geminiWishText.textContent = "ขออภัย, ไม่สามารถสร้างคำอวยพรได้ในขณะนี้";
+        }
+        generateWishBtn.disabled = false;
+    });
+
+
+    // --- Initial Setup ---
+    setupContent();
+    showPage('landing');
+});
+
+</script>
+
+</body>
+</html>
